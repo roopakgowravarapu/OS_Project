@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Implementation of Banker's Algorithm | Operating Systems</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-title">
+          <h2>Banker's OS</h2>
+          <span class="sub-label">Deadlock Avoidance</span>
+        </div>
+        <button class="icon-btn collapse-toggle" id="sidebarToggle" title="Toggle Sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <a href="#section-config" class="nav-item active" data-section="config">
+          <span class="nav-num">01</span>
+          <span class="nav-text">System Configuration</span>
+        </a>
+        <a href="#section-dashboard" class="nav-item" data-section="dashboard">
+          <span class="nav-num">02</span>
+          <span class="nav-text">Resource Allocation</span>
+        </a>
+        <a href="#section-safety" class="nav-item" data-section="safety">
+          <span class="nav-num">03</span>
+          <span class="nav-text">Banker's Algorithm</span>
+        </a>
+        <a href="#section-multithreading" class="nav-item" data-section="multithreading">
+          <span class="nav-num">04</span>
+          <span class="nav-text">Multithreading</span>
+        </a>
+        <a href="#section-race-condition" class="nav-item" data-section="race-condition">
+          <span class="nav-num">05</span>
+          <span class="nav-text">Race Condition Prevention</span>
+        </a>
+        <a href="#section-request-release" class="nav-item" data-section="request-release">
+          <span class="nav-num">06</span>
+          <span class="nav-text">Request &amp; Release</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Status Card -->
+      <div class="sidebar-status-card">
+        <div class="status-indicator-row">
+          <span class="status-dot warning" id="sidebarStatusDot"></span>
+          <span class="status-title" id="sidebarStatusText">State: Pending Init</span>
+        </div>
+        <div class="sidebar-meta" id="sidebarMetaText">5 Processes | 3 Resources (Click Initialize)</div>
+        <div class="sidebar-actions">
+          <button class="btn btn-sm btn-outline" id="quickResetBtn">Reset System</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumb">
+            <span class="bc-course">Operating Systems Simulation</span>
+            <span class="bc-sep">/</span>
+            <span class="bc-title" id="currentSectionTitle">System Configuration</span>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <!-- Stepper Progress Tracker -->
+          <div class="stepper-progress">
+            <div class="step-dot active" data-target="config" title="Step 1: Configuration">1</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-target="dashboard" title="Step 2: Dashboard">2</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-target="safety" title="Step 3: Banker's Visualization">3</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-target="multithreading" title="Step 4: Multithreading">4</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-target="race-condition" title="Step 5: Race Condition">5</div>
+            <div class="step-line"></div>
+            <div class="step-dot" data-target="request-release" title="Step 6: Request &amp; Release">6</div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-sm btn-secondary" id="toggleLogsDrawerBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Execution Logs
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Viewport -->
+      <div class="viewport">
+        <!-- ========================================== -->
+        <!-- SECTION 1: SYSTEM CONFIGURATION            -->
+        <!-- ========================================== -->
+        <section id="section-config" class="view-section active">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 01</div>
+            <h1>System Configuration</h1>
+            <p class="section-desc">
+              Define the Operating System's physical resource capacities and the maximum claims for each process.
+              The Banker's Algorithm uses this maximum claim to guarantee deadlock avoidance.
+            </p>
+          </div>
+
+          <!-- Presets Bar -->
+          <div class="card preset-card">
+            <div class="preset-label">Standard Presets:</div>
+            <div class="preset-buttons">
+              <button class="btn btn-outline" id="presetSilberschatzBtn">Silberschatz Textbook (Safe)</button>
+              <button class="btn btn-outline" id="presetDeadlockBtn">Deadlock / Unsafe Case</button>
+              <button class="btn btn-outline" id="presetSimpleBtn">Simple 3-Process Case</button>
+            </div>
+          </div>
+
+          <!-- Configuration Form Grid -->
+          <div class="config-grid">
+            <!-- Dimensions Card -->
+            <div class="card">
+              <h3 class="card-title">1. Dimension Controls</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="numProcessesInput">Processes (n)</label>
+                  <input type="number" id="numProcessesInput" min="1" max="8" value="5" class="form-control">
+                  <span class="helper-text">Allowed: 1 to 8 processes</span>
+                </div>
+                <div class="form-group">
+                  <label for="numResourcesInput">Resource Types (m)</label>
+                  <input type="number" id="numResourcesInput" min="1" max="5" value="3" class="form-control">
+                  <span class="helper-text">Allowed: 1 to 5 resource types</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary mt-2" id="generateFieldsBtn">Re-generate Input Grid</button>
+            </div>
+
+            <!-- Total Resources Card -->
+            <div class="card">
+              <h3 class="card-title">2. Total System Capacity</h3>
+              <p class="card-subtitle">Total physical instances of each resource type in the OS:</p>
+              <div id="totalResourcesContainer" class="dynamic-vector-row">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Matrices Input Card -->
+          <div class="card mt-4">
+            <div class="card-header-flex">
+              <div>
+                <h3 class="card-title">3. Maximum Claim Matrix (Max)</h3>
+                <p class="card-subtitle">Maximum units of each resource type that each process may request during
+                  execution.</p>
+              </div>
+            </div>
+
+            <div class="table-container mt-2">
+              <table class="matrix-table" id="configMaxTable">
+                <!-- Dynamically generated header and inputs -->
+              </table>
+            </div>
+
+            <div class="card-header-flex mt-4">
+              <div>
+                <h3 class="card-title">4. Initial Allocation Matrix (Optional)</h3>
+                <p class="card-subtitle">Resources currently allocated to each process before running requests. (Must
+                  not exceed Max).</p>
+              </div>
+            </div>
+
+            <div class="table-container mt-2">
+              <table class="matrix-table" id="configAllocTable">
+                <!-- Dynamically generated header and inputs -->
+              </table>
+            </div>
+
+            <div class="alert-box" id="configValidationAlert" style="display: none;"></div>
+
+            <div class="action-footer mt-4">
+              <button class="btn btn-primary" id="initSystemBtn">INITIALIZE SYSTEM</button>
+              <button class="btn btn-outline" id="goToDashboardBtn" style="display: none;">Proceed to Dashboard
+                &rarr;</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 2: RESOURCE ALLOCATION DASHBOARD   -->
+        <!-- ========================================== -->
+        <section id="section-dashboard" class="view-section">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 02</div>
+            <h1>Resource Allocation Dashboard</h1>
+            <p class="section-desc">
+              Current state of OS resources showing Available Vector, Maximum Matrix, Allocation Matrix, and dynamically
+              calculated Need Matrix.
+            </p>
+          </div>
+
+          <!-- Metric Summary Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">TOTAL PHYSICAL RESOURCES</div>
+              <div class="metric-value font-mono" id="dashTotalSummary">R0: 10 | R1: 5 | R2: 7</div>
+              <div class="metric-caption">System hardware capacity</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">CURRENTLY ALLOCATED</div>
+              <div class="metric-value font-mono" id="dashAllocSummary">R0: 7 | R1: 2 | R2: 5</div>
+              <div class="metric-caption">Sum of all current process allocations</div>
+            </div>
+            <div class="metric-card highlight-blue">
+              <div class="metric-label">CURRENTLY AVAILABLE</div>
+              <div class="metric-value font-mono" id="dashAvailSummary">R0: 3 | R1: 3 | R2: 2</div>
+              <div class="metric-caption">Total - Allocated (free to allocate)</div>
+            </div>
+          </div>
+
+          <!-- Formula Explanations -->
+          <div class="formula-banner">
+            <div class="formula-item">
+              <span class="formula-math">Need[i][j] = Maximum[i][j] - Allocation[i][j]</span>
+              <span class="formula-note">Remaining resources process may still request</span>
+            </div>
+            <div class="formula-divider"></div>
+            <div class="formula-item">
+              <span class="formula-math">Available[j] = Total[j] - &sum; Allocation[i][j]</span>
+              <span class="formula-note">Unallocated resources currently in system pool</span>
+            </div>
+          </div>
+
+          <!-- Dashboard Matrices Grid -->
+          <div class="matrices-grid">
+            <!-- Available Vector Card -->
+            <div class="card matrix-card">
+              <div class="card-header-flex">
+                <h3 class="card-title">Available Vector (1 &times; m)</h3>
+                <span class="badge badge-blue">System Pool</span>
+              </div>
+              <div class="table-container">
+                <table class="matrix-table" id="tableDashAvailable"></table>
+              </div>
+            </div>
+
+            <!-- Need Matrix Card -->
+            <div class="card matrix-card">
+              <div class="card-header-flex">
+                <h3 class="card-title">Need Matrix (n &times; m)</h3>
+                <span class="badge badge-amber">Need = Max - Alloc</span>
+              </div>
+              <div class="table-container">
+                <table class="matrix-table" id="tableDashNeed"></table>
+              </div>
+            </div>
+
+            <!-- Allocation Matrix Card -->
+            <div class="card matrix-card">
+              <div class="card-header-flex">
+                <h3 class="card-title">Allocation Matrix (n &times; m)</h3>
+                <span class="badge badge-green">Currently Held</span>
+              </div>
+              <div class="table-container">
+                <table class="matrix-table" id="tableDashAllocation"></table>
+              </div>
+            </div>
+
+            <!-- Maximum Matrix Card -->
+            <div class="card matrix-card">
+              <div class="card-header-flex">
+                <h3 class="card-title">Maximum Matrix (n &times; m)</h3>
+                <span class="badge badge-neutral">Declared Limit</span>
+              </div>
+              <div class="table-container">
+                <table class="matrix-table" id="tableDashMax"></table>
+              </div>
+            </div>
+          </div>
+
+          <div class="action-footer mt-4">
+            <button class="btn btn-primary" id="dashToSafetyBtn">NEXT STEP: Run Banker's Safety Algorithm
+              &rarr;</button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 3: BANKER'S ALGORITHM VISUALIZATION -->
+        <!-- ========================================== -->
+        <section id="section-safety" class="view-section">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 03</div>
+            <h1>Banker's Algorithm Visualization</h1>
+            <p class="section-desc">
+              Step-by-step demonstration of the Safety Algorithm.
+              Each step compares the process Need with the working Available vector (Work) to determine if a safe
+              execution sequence exists.
+            </p>
+          </div>
+
+          <!-- Visual State Vectors Bar -->
+          <div class="vectors-bar-grid">
+            <!-- Work Vector -->
+            <div class="card vector-card">
+              <div class="vector-header">
+                <span class="vector-title">Work Vector</span>
+                <span class="vector-sub">Available instances released on completion</span>
+              </div>
+              <div class="vector-chips" id="safetyWorkChips">
+                <!-- Dynamically generated -->
+              </div>
+            </div>
+
+            <!-- Finish Array -->
+            <div class="card vector-card">
+              <div class="vector-header">
+                <span class="vector-title">Finish Array</span>
+                <span class="vector-sub">Process completion status</span>
+              </div>
+              <div class="finish-chips" id="safetyFinishChips">
+                <!-- Dynamically generated -->
+              </div>
+            </div>
+
+            <!-- Safe Sequence -->
+            <div class="card vector-card">
+              <div class="vector-header">
+                <span class="vector-title">Safe Sequence Generated</span>
+                <span class="vector-sub">Execution order guaranteeing zero deadlock</span>
+              </div>
+              <div class="sequence-chips" id="safetySequenceChips">
+                <span class="empty-seq-placeholder">No processes completed yet</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stepper Control Bar -->
+          <div class="stepper-controls-card card">
+            <div class="controls-left">
+              <button class="btn btn-outline" id="safetyPrevBtn" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Previous Step
+              </button>
+              <button class="btn btn-primary" id="safetyNextBtn">
+                Next Step
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+              <button class="btn btn-secondary" id="safetyPlayBtn">Auto Play</button>
+              <button class="btn btn-outline" id="safetyRestartBtn">Restart</button>
+            </div>
+
+            <div class="controls-center">
+              <div class="step-indicator" id="safetyStepCounter">Step 0 of 0</div>
+            </div>
+
+            <div class="controls-right">
+              <label for="safetySpeedSelect" class="speed-label">Speed:</label>
+              <select id="safetySpeedSelect" class="form-control select-sm font-mono">
+                <option value="150">⚡ Ultra Fast (0.15s)</option>
+                <option value="400" selected>⚡ Fast (0.4s)</option>
+                <option value="900">Normal (0.9s)</option>
+                <option value="1800">Slow (1.8s)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Inspection & Explanation Area -->
+          <div class="inspection-grid mt-4">
+            <!-- Process Comparison Inspector -->
+            <div class="card inspector-card">
+              <h3 class="card-title" id="inspectorHeader">Current Evaluation</h3>
+              <div id="inspectorContent" class="inspector-body">
+                <div class="placeholder-box">Click "Next Step" or "Auto Play" to start the safety algorithm simulation.
+                </div>
+              </div>
+            </div>
+
+            <!-- Educational Narrative Box -->
+            <div class="card narrative-card">
+              <h3 class="card-title">Algorithm Step Explanation</h3>
+              <div class="narrative-body" id="safetyNarrativeText">
+                Banker's Safety Algorithm simulates whether all processes can finish their execution if each process
+                requests its maximum declared need.
+              </div>
+              <div class="outcome-banner" id="safetyFinalBanner" style="display: none;"></div>
+            </div>
+          </div>
+
+          <div class="action-footer mt-4" id="safetyActionFooter">
+            <button class="btn btn-outline" id="safetyDeadlockResolveBtn" style="display: none;">Resolve Deadlock (Load
+              Safe Preset)</button>
+            <button class="btn btn-primary" id="safetyToThreadsBtn">NEXT STEP: Multithreading Architecture
+              &rarr;</button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 4: MULTITHREADING                  -->
+        <!-- ========================================== -->
+        <section id="section-multithreading" class="view-section">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 04</div>
+            <h1>MULTITHREADING</h1>
+            <p class="section-desc">
+              Demonstrates real operating system concurrency. The Python backend spawns one actual
+              <code>threading.Thread()</code>
+              for each process. Each thread requests resources, enters synchronization barriers, and joins back to the
+              main thread.
+            </p>
+          </div>
+
+          <!-- Deadlock Blocked Banner in Multithreading -->
+          <div class="alert-box error" id="threadsDeadlockAlert" style="display: none; margin-bottom: 16px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>
+              <strong>EXECUTION BLOCKED (DEADLOCK DETECTED):</strong>
+              The Banker's Algorithm identified an Unsafe State. Operating systems prevent dispatching threads when no
+              safe sequence exists.
+            </div>
+          </div>
+
+          <!-- Thread Execution Actions -->
+          <div class="card action-toolbar">
+            <div class="toolbar-left">
+              <button class="btn btn-primary" id="runThreadsBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                ⚡ Spawn Fresh Threads (New TIDs)
+              </button>
+              <button class="btn btn-outline" id="threadsResetBtn">Reset Status</button>
+            </div>
+
+            <div class="toolbar-right">
+              <div class="legend-group">
+                <span class="legend-badge status-created">Created</span>
+                <span class="legend-badge status-ready">Ready</span>
+                <span class="legend-badge status-running">Running</span>
+                <span class="legend-badge status-waiting">Waiting</span>
+                <span class="legend-badge status-completed">Completed</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stepper Controls for Multithreading Timeline -->
+          <div class="stepper-controls-card card mt-2" id="threadsStepperCard" style="display: none;">
+            <div class="controls-left">
+              <button class="btn btn-outline" id="threadsPrevBtn" disabled>Previous Step</button>
+              <button class="btn btn-primary" id="threadsNextBtn">Next Step</button>
+              <button class="btn btn-secondary" id="threadsPlayBtn">Auto Play</button>
+              <button class="btn btn-outline" id="threadsTimelineRestartBtn"
+                title="Rewind visual playback to Step 1 without respawning threads">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                  <polygon points="22 19 13 12 22 5 22 19"></polygon>
+                </svg>
+                Rewind Playback (Step 1)
+              </button>
+            </div>
+            <div class="controls-center">
+              <div class="step-indicator" id="threadsStepCounter">Step 0 of 0</div>
+              <div class="playback-meta-text" id="threadsRunTimestampBadge"
+                style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
+                Playback of recorded thread execution
+              </div>
+            </div>
+            <div class="controls-right">
+              <label for="threadsSpeedSelect" class="speed-label">Speed:</label>
+              <select id="threadsSpeedSelect" class="form-control select-sm font-mono">
+                <option value="120">⚡ Ultra Fast (0.12s)</option>
+                <option value="350" selected>⚡ Fast (0.35s)</option>
+                <option value="750">Normal (0.75s)</option>
+                <option value="1500">Slow (1.5s)</option>
+              </select>
+              <span class="helper-text font-mono" id="threadsActiveEventTid">Thread ID: --</span>
+            </div>
+          </div>
+
+          <!-- Live OS Resource Pool & Synchronization State HUD -->
+          <div class="card mt-3" id="threadsLiveStatusCard" style="display: none;">
+            <div class="vector-header">
+              <span class="vector-title">Live OS Resource Pool & Synchronization State</span>
+              <span class="vector-sub">Dynamic Available vector, Mutex lock status, and Safe Completion Sequence during
+                execution</span>
+            </div>
+            <div
+              style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 4px 0;">
+              <div>
+                <span
+                  style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 5px; letter-spacing: 0.5px;">Current
+                  Available Vector</span>
+                <div class="vector-display" id="threadsLiveAvailableChips">
+                  <!-- Dynamic chips for R0, R1, R2 -->
+                </div>
+              </div>
+              <div>
+                <span
+                  style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 5px; letter-spacing: 0.5px;">Shared
+                  Mutex Lock</span>
+                <div id="threadsMutexBadge" class="badge"
+                  style="font-size: 12.5px; padding: 6px 14px; border-radius: 4px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 600;">
+                  🔓 Mutex Unlocked
+                </div>
+              </div>
+              <div style="flex: 1; min-width: 220px;">
+                <span
+                  style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 5px; letter-spacing: 0.5px;">Safe
+                  Execution Sequence Completed</span>
+                <div id="threadsSafeSequenceDisplay" class="font-mono"
+                  style="font-size: 13px; font-weight: 600; color: #0f766e; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 5px 12px; border-radius: 4px; display: inline-block;">
+                  None completed yet
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thread Mapping & Visualization Diagram -->
+          <div class="card mt-4">
+            <h3 class="card-title">Thread-to-Process Architecture (1:1 Mapping)</h3>
+            <p class="card-subtitle">Every customer process runs as an independent operating system thread managed by
+              Python's threading engine.</p>
+
+            <div class="threads-mapping-grid" id="threadsMappingContainer">
+              <!-- Dynamically populated: T_i -> P_i nodes -->
+            </div>
+          </div>
+
+          <!-- Live Thread Event Description Card -->
+          <div class="card mt-4">
+            <h3 class="card-title">Thread Progression Event</h3>
+            <div class="thread-event-box" id="threadCurrentEventBox">
+              Click "Run Real Multi-Threaded Execution" to launch real Python threads.
+            </div>
+          </div>
+
+          <div class="action-footer mt-4">
+            <button class="btn btn-primary" id="threadsToRaceBtn">NEXT STEP: Race Condition Prevention &rarr;</button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 5: RACE CONDITION PREVENTION       -->
+        <!-- ========================================== -->
+        <section id="section-race-condition" class="view-section">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 05</div>
+            <h1>RACE CONDITION PREVENTION</h1>
+            <p class="section-desc">
+              Demonstrates why synchronization is required when multiple threads access shared resources simultaneously,
+              and how <code>threading.Lock()</code> (Mutex) guarantees mutual exclusion to prevent data corruption.
+            </p>
+          </div>
+
+          <!-- Problem Scenario Card -->
+          <div class="card scenario-intro-card">
+            <div class="scenario-title">The Shared Resource Problem</div>
+            <p class="scenario-text">
+              Suppose <strong>Shared Available Units = 5</strong>.<br>
+              <strong>Thread T0</strong> requests 3 units, while <strong>Thread T1</strong> requests 4 units.
+              If both threads read the shared memory concurrently without synchronization, both observe
+              <code>5 &ge; Request</code>.
+              Both subtract, resulting in <code>5 - 3 - 4 = -2</code> (Data corruption / Race condition hazard)!
+            </p>
+          </div>
+
+          <!-- Mode Toggle Tabs -->
+          <div class="tab-buttons-bar">
+            <button class="tab-btn active" id="tabWithMutex" data-mode="with_mutex">
+              SYNCHRONIZED WITH MUTEX LOCK (threading.Lock)
+            </button>
+            <button class="tab-btn" id="tabWithoutMutex" data-mode="without_mutex">
+              WITHOUT SYNCHRONIZATION (RACE CONDITION HAZARD)
+            </button>
+          </div>
+
+          <!-- Stepper Controls for Race Condition -->
+          <div class="stepper-controls-card card">
+            <div class="controls-left">
+              <button class="btn btn-outline" id="racePrevBtn" disabled>Previous Step</button>
+              <button class="btn btn-primary" id="raceNextBtn">Next Step</button>
+              <button class="btn btn-secondary" id="racePlayBtn">Auto Play</button>
+              <button class="btn btn-outline" id="raceRestartBtn" title="Rewind visual playback to Step 1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                  <polygon points="22 19 13 12 22 5 22 19"></polygon>
+                </svg>
+                Rewind (Step 1)
+              </button>
+              <button class="btn btn-outline" id="raceRerunBtn" title="Re-run simulation with fresh live timestamps">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                ⚡ Fresh Run
+              </button>
+            </div>
+            <div class="controls-center">
+              <div class="step-indicator" id="raceStepCounter">Step 0 of 0</div>
+              <div class="playback-meta-text" id="raceRunTimestampBadge"
+                style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">
+                Playback of live scenario run
+              </div>
+            </div>
+            <div class="controls-right">
+              <label for="raceSpeedSelect" class="speed-label">Speed:</label>
+              <select id="raceSpeedSelect" class="form-control select-sm font-mono">
+                <option value="150">⚡ Ultra Fast (0.15s)</option>
+                <option value="400" selected>⚡ Fast (0.4s)</option>
+                <option value="900">Normal (0.9s)</option>
+                <option value="1600">Slow (1.6s)</option>
+              </select>
+              <span class="badge" id="raceModeBadge">Mode: With Mutex</span>
+            </div>
+          </div>
+
+          <!-- Visual Synchronization Architecture -->
+          <div class="sync-stage-card card mt-4">
+            <div class="sync-stage-layout">
+              <!-- Left: Threads Pool -->
+              <div class="stage-col">
+                <div class="col-title">Thread Callers</div>
+                <div class="thread-agent-card" id="agentT0">
+                  <div class="agent-name">Thread T0</div>
+                  <div class="agent-req">Requests 3 units</div>
+                  <div class="agent-state" id="agentT0State">Idle</div>
+                </div>
+                <div class="thread-agent-card" id="agentT1">
+                  <div class="agent-name">Thread T1</div>
+                  <div class="agent-req">Requests 4 units</div>
+                  <div class="agent-state" id="agentT1State">Idle</div>
+                </div>
+              </div>
+
+              <!-- Connecting Channel / Queue -->
+              <div class="stage-col queue-col">
+                <div class="col-title">Waiting Queue</div>
+                <div class="queue-box" id="raceQueueBox">
+                  <span class="empty-queue-text">Queue Empty</span>
+                </div>
+              </div>
+
+              <!-- Center: Mutex Lock Gate -->
+              <div class="stage-col lock-col">
+                <div class="col-title">Mutex Lock Gate</div>
+                <div class="lock-gate-box" id="raceLockGate">
+                  <div class="lock-icon" id="raceLockIcon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </div>
+                  <div class="lock-label" id="raceLockLabel">UNLOCKED</div>
+                  <div class="lock-holder font-mono" id="raceLockHolder">No Owner</div>
+                </div>
+              </div>
+
+              <!-- Right: Critical Section & Shared Resource -->
+              <div class="stage-col cs-col">
+                <div class="col-title">Critical Section</div>
+                <div class="cs-chamber" id="raceCriticalSection">
+                  <div class="cs-status-label" id="raceCsOccupant">Chamber Empty</div>
+                  <div class="shared-resource-box">
+                    <div class="resource-title">Shared Available Memory</div>
+                    <div class="resource-val font-mono" id="raceSharedVal">5</div>
+                    <div class="resource-units">Units Available</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Current Step Narrative -->
+            <div class="race-explanation-box mt-4" id="raceExplanationText">
+              Select a mode and click "Next Step" to observe step-by-step mutex protection vs race hazard.
+            </div>
+          </div>
+
+          <div class="action-footer mt-4">
+            <button class="btn btn-primary" id="raceToRequestBtn">NEXT STEP: Manual Request &amp; Release
+              &rarr;</button>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 6: RESOURCE REQUEST & RELEASE      -->
+        <!-- ========================================== -->
+        <section id="section-request-release" class="view-section">
+          <div class="section-heading">
+            <div class="heading-meta">SECTION 06</div>
+            <h1>Resource Request &amp; Release</h1>
+            <p class="section-desc">
+              Interact directly with the Banker. Request resources dynamically to observe Banker's 4-step validation,
+              provisional allocation, safety verification, and automatic rollback on unsafe claims.
+            </p>
+          </div>
+
+          <!-- Transaction Result Banner (prominently visible at the top without scrolling) -->
+          <div class="card mb-4" id="transactionResultCard" style="display: none; margin-bottom: 20px;">
+            <div class="card-header-flex">
+              <h3 class="card-title" id="transactionResultTitle">Transaction Outcome</h3>
+              <span class="badge" id="transactionBadge">APPROVED</span>
+            </div>
+            <p class="transaction-desc" id="transactionResultDesc"></p>
+          </div>
+
+          <div class="req-rel-grid">
+            <!-- REQUEST PANEL -->
+            <div class="card">
+              <div class="card-header-flex">
+                <h3 class="card-title">1. Resource Request</h3>
+                <span class="badge badge-blue">Protected by Mutex</span>
+              </div>
+              <p class="card-subtitle">Process requests additional resources from the OS.</p>
+
+              <div class="form-group mt-3">
+                <label for="requestProcessSelect">Select Process</label>
+                <select id="requestProcessSelect" class="form-control"></select>
+              </div>
+
+              <div class="form-group mt-3">
+                <label>Resource Quantities to Request</label>
+                <div id="requestInputsContainer" class="dynamic-vector-row"></div>
+              </div>
+
+              <!-- Preset test cases for quick viva demonstration -->
+              <div class="test-chips-group mt-3">
+                <div class="card-header-flex">
+                  <div class="chips-label">Quick Test Scenarios:</div>
+                  <button class="chip-btn chip-reset" id="chipResetBaseline"
+                    title="Reset system back to initial textbook baseline">↺ Reset Baseline</button>
+                </div>
+                <button class="chip-btn" id="chipSafeReq">P1: [1, 0, 2] (Safe Request)</button>
+                <button class="chip-btn" id="chipUnsafeReq">P0: [0, 0, 2] (Unsafe &rarr; Rollback)</button>
+                <button class="chip-btn" id="chipWaitReq">P4: [4, 3, 1] (Exceeds Available &rarr; Wait)</button>
+                <button class="chip-btn" id="chipExceedNeed">P0: [8, 4, 3] (Exceeds Claim &rarr; Error)</button>
+              </div>
+
+              <div class="mt-4">
+                <button class="btn btn-primary w-full" id="submitRequestBtn">REQUEST RESOURCES</button>
+              </div>
+
+              <!-- 4-step Banker request pipeline visualization -->
+              <div class="pipeline-card mt-4" id="requestPipelineCard">
+                <div class="pipeline-title">Banker's Verification Protocol</div>
+                <div class="pipeline-steps">
+                  <div class="p-step" id="pipeStep1">
+                    <span class="p-num">1</span>
+                    <span class="p-text">Request &le; Need</span>
+                  </div>
+                  <div class="p-step" id="pipeStep2">
+                    <span class="p-num">2</span>
+                    <span class="p-text">Request &le; Available</span>
+                  </div>
+                  <div class="p-step" id="pipeStep3">
+                    <span class="p-num">3</span>
+                    <span class="p-text">Tentative Allocation</span>
+                  </div>
+                  <div class="p-step" id="pipeStep4">
+                    <span class="p-num">4</span>
+                    <span class="p-text">Safety Check &amp; Commit</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RELEASE PANEL -->
+            <div class="card">
+              <div class="card-header-flex">
+                <h3 class="card-title">2. Resource Release</h3>
+                <span class="badge badge-green">Protected by Mutex</span>
+              </div>
+              <p class="card-subtitle">Process voluntarily releases held resources back to system pool.</p>
+
+              <div class="form-group mt-3">
+                <label for="releaseProcessSelect">Select Process</label>
+                <select id="releaseProcessSelect" class="form-control"></select>
+              </div>
+
+              <div class="form-group mt-3">
+                <label>Resource Quantities to Release</label>
+                <div id="releaseInputsContainer" class="dynamic-vector-row"></div>
+                <span class="helper-text">Cannot release more than current allocation.</span>
+              </div>
+
+              <div class="mt-4">
+                <button class="btn btn-outline w-full" id="submitReleaseBtn" disabled
+                  title="Enter at least one resource quantity > 0 to release">RELEASE RESOURCES</button>
+              </div>
+
+              <!-- Current Process Status Mini Table -->
+              <div class="mini-status-card mt-4">
+                <div class="mini-status-title">Selected Process Holding Status</div>
+                <div class="mini-status-row" id="selectedProcStatusRow">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Execution Logs Drawer -->
+  <div class="logs-drawer" id="logsDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+        System Execution History
+      </div>
+      <div class="drawer-actions">
+        <button class="btn btn-sm btn-outline" id="clearLogsBtn">Clear Logs</button>
+        <button class="icon-btn" id="closeLogsDrawerBtn">&times;</button>
+      </div>
+    </div>
+    <div class="drawer-body">
+      <div class="logs-table-container">
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Source</th>
+              <th>Action</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+
+</html>
